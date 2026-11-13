@@ -568,6 +568,7 @@ def test_config_update_replaces_alias(tmp_path, capsys):
     assert main(["--config", str(config), "config", "update", "rocky",
                  "--user", "root", "--host", "new-host",
                  "--path", "/new-data"]) == 0
+    assert main(["--config", str(config), "config", "list"]) == 0
     assert "new-host" in capsys.readouterr().out
 
 
@@ -581,6 +582,18 @@ def test_send_resolves_alias_and_runs_scp(tmp_path, monkeypatch):
     assert main(["--config", str(config), "send", "report.zip",
                  "rocky:/data/"]) == 0
     assert calls == [["scp", "report.zip", "root@rocky-server:/data/"]]
+
+
+def test_get_resolves_alias_and_runs_scp(tmp_path, monkeypatch):
+    config = tmp_path / "config.json"
+    main(["--config", str(config), "config", "add", "rocky",
+          "--user", "root", "--host", "rocky-server", "--path", "/data"])
+    calls = []
+    monkeypatch.setattr("tscp.cli.run_transfer", lambda command: calls.append(command))
+
+    assert main(["--config", str(config), "get", "rocky:/data/report.zip",
+                 "downloaded.zip"]) == 0
+    assert calls == [["scp", "root@rocky-server:/data/report.zip", "downloaded.zip"]]
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -679,11 +692,13 @@ def _handle_transfer(args: argparse.Namespace, store: ConfigStore) -> int:
     remote_value = args.destination if args.command == "send" else args.source
     alias_name, remote_path = split_remote(remote_value)
     alias = store.get_alias(alias_name)
+    transfer_source = args.source if args.command == "send" else remote_path
+    transfer_destination = remote_path if args.command == "send" else args.destination
     command = build_scp_command(
         args.command,
         alias,
-        args.source,
-        remote_path if args.command == "send" else args.destination,
+        transfer_source,
+        transfer_destination,
         args.recursive,
     )
     run_transfer(command)
