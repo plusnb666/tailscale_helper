@@ -25,6 +25,9 @@ def test_add_and_load_alias(tmp_path):
         host="rocky-server",
         default_path="/data/transfer",
     )
+    assert "port" not in json.loads(
+        (tmp_path / "config.json").read_text(encoding="utf-8")
+    )["aliases"]["rocky"]
 
 
 def test_duplicate_alias_is_rejected(tmp_path):

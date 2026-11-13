@@ -40,7 +40,7 @@ class ConfigStore:
             raise ConfigError(f"alias already exists: {alias.name}")
         values = asdict(alias)
         values.pop("name")
-        aliases[alias.name] = values
+        aliases[alias.name] = {key: value for key, value in values.items() if value is not None}
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(
             json.dumps({"aliases": aliases}, indent=2) + "\n",
