@@ -420,7 +420,7 @@ def test_get_directory_adds_recursive_flag():
     assert build_scp_command(
         operation="get",
         alias=alias,
-        source="root@rocky-server:/data/archive",
+        source="/data/archive",
         remote_path="C:\\tmp",
         recursive=True,
     ) == [
