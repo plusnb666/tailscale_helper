@@ -126,6 +126,34 @@ work without `--user`.
 自动发现传输必须提供 `--user`，因为 Tailscale 不提供远程 SSH 用户名。
 已有的配置别名仍然可以不带 `--user` 使用。
 
+## Tab completion / Tab 自动补全
+
+Enable completion for the current PowerShell session / 为当前 PowerShell
+会话启用补全：
+
+```powershell
+tscp completion powershell | Out-String | Invoke-Expression
+```
+
+Enable completion for the current Bash session / 为当前 Bash 会话启用补全：
+
+```bash
+eval "$(tscp completion bash)"
+```
+
+The completion script provides static commands and dynamically suggests saved
+aliases plus Tailscale device names. Dynamic candidates are queried when Tab
+is pressed. If Tailscale is unavailable, static completion still works.
+
+补全脚本提供静态命令，并动态提示已保存的 alias 和 Tailscale 设备名。
+动态候选会在按下 Tab 时查询。如果 Tailscale 不可用，静态补全仍然可用。
+
+To enable it automatically, add the PowerShell command to your PowerShell
+profile or the Bash command to `~/.bashrc`.
+
+如需每次启动自动启用，可以将 PowerShell 命令加入 PowerShell profile，
+或将 Bash 命令加入 `~/.bashrc`。
+
 ## Transfer files / 传输文件
 
 ### Send a file / 发送文件

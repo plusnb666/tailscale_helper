@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 
 from .config import Alias, ConfigStore
+from .completion import render_bash, render_powershell, shell_candidates
 from .errors import TscpError, UnknownAliasError
 from .targets import split_remote
 from .tailscale import discover_devices, find_device
@@ -40,6 +41,17 @@ def build_parser() -> argparse.ArgumentParser:
     device_commands = device.add_subparsers(dest="device_command", required=True)
     device_commands.add_parser("list")
 
+    completion = commands.add_parser("completion")
+    completion_commands = completion.add_subparsers(
+        dest="completion_command", required=True
+    )
+    completion_commands.add_parser("powershell")
+    completion_commands.add_parser("bash")
+    candidates = completion_commands.add_parser(
+        "candidates", help=argparse.SUPPRESS
+    )
+    candidates.add_argument("--shell", choices=("powershell", "bash"), required=True)
+
     send = commands.add_parser("send")
     send.add_argument("source")
     send.add_argument("destination")
@@ -61,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
             return _handle_config(args, store)
         if args.command == "device":
             return _handle_device(args)
+        if args.command == "completion":
+            return _handle_completion(args, store)
         return _handle_transfer(args, store)
     except TscpError as exc:
         print(f"tscp: {exc}", file=sys.stderr)
@@ -90,6 +104,28 @@ def _handle_device(args: argparse.Namespace) -> int:
         for device in discover_devices():
             state = "online" if device.online else "offline"
             print(f"{device.name}\t{device.dns_name}\t{device.operating_system}\t{state}")
+    return 0
+
+
+def _handle_completion(args: argparse.Namespace, store: ConfigStore) -> int:
+    if args.completion_command == "powershell":
+        print(render_powershell())
+        return 0
+    if args.completion_command == "bash":
+        print(render_bash())
+        return 0
+
+    aliases = [alias.name for alias in store.list_aliases()]
+    devices = []
+    try:
+        discovered = discover_devices()
+    except TscpError:
+        discovered = []
+    for device in discovered:
+        devices.extend((device.name, device.dns_name))
+    for value in shell_candidates(aliases, devices, shell=args.shell):
+        if "\r" not in value and "\n" not in value:
+            print(value)
     return 0
 
 
