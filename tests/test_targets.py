@@ -2,7 +2,7 @@ import pytest
 
 from tscp.config import Alias
 from tscp.errors import TargetError
-from tscp.targets import resolve_remote, split_remote
+from tscp.targets import resolve_remote, split_remote, split_send_target
 
 
 def test_split_remote_requires_alias_and_path():
@@ -25,3 +25,21 @@ def test_resolve_remote_includes_non_default_port():
     alias = Alias("rocky", "root", "rocky-server", "/data", port=2222)
 
     assert resolve_remote(alias, "/report.zip") == "root@rocky-server:/report.zip"
+
+
+def test_split_send_target_accepts_bare_host():
+    assert split_send_target("linux") == ("linux", "")
+
+
+def test_split_send_target_accepts_explicit_path():
+    assert split_send_target("linux:/tmp/files") == ("linux", "/tmp/files")
+
+
+def test_split_send_target_rejects_empty_host():
+    with pytest.raises(TargetError, match="host"):
+        split_send_target("")
+
+
+def test_split_send_target_rejects_relative_path():
+    with pytest.raises(TargetError, match="absolute"):
+        split_send_target("linux:relative/path")

@@ -5,7 +5,7 @@ import sys
 from .config import Alias, ConfigStore
 from .completion import render_bash, render_powershell, shell_candidates
 from .errors import TscpError, UnknownAliasError
-from .targets import split_remote
+from .targets import split_remote, split_send_target
 from .tailscale import discover_devices, find_device
 from .transfer import build_scp_command, run_transfer
 
@@ -146,11 +146,16 @@ def _resolve_alias(
 
 
 def _handle_transfer(args: argparse.Namespace, store: ConfigStore) -> int:
-    remote_value = args.destination if args.command == "send" else args.source
-    alias_name, remote_path = split_remote(remote_value)
-    alias = _resolve_alias(alias_name, store, args.user)
-    transfer_source = args.source if args.command == "send" else remote_path
-    transfer_destination = remote_path if args.command == "send" else args.destination
+    if args.command == "send":
+        alias_name, remote_path = split_send_target(args.destination)
+        alias = _resolve_alias(alias_name, store, args.user)
+        transfer_source = args.source
+        transfer_destination = remote_path
+    else:
+        alias_name, remote_path = split_remote(args.source)
+        alias = _resolve_alias(alias_name, store, args.user)
+        transfer_source = remote_path
+        transfer_destination = args.destination
     command = build_scp_command(
         args.command,
         alias,

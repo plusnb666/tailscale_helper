@@ -45,3 +45,17 @@ def test_invalid_config_is_reported(tmp_path):
 
     with pytest.raises(ConfigError, match="invalid"):
         ConfigStore(path).list_aliases()
+
+
+def test_save_alias_rejects_relative_default_path(tmp_path):
+    store = ConfigStore(tmp_path / "config.json")
+
+    with pytest.raises(ConfigError, match="absolute"):
+        store.save_alias(
+            Alias(
+                name="linux",
+                user="nbplus",
+                host="linux",
+                default_path="Downloads",
+            )
+        )

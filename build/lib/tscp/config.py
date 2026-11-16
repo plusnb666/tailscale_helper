@@ -35,6 +35,8 @@ class ConfigStore:
         raise UnknownAliasError(f"unknown alias: {name}")
 
     def save_alias(self, alias: Alias, replace: bool = False) -> None:
+        if not alias.default_path.startswith("/"):
+            raise ConfigError("default path must be absolute")
         aliases = {item.name: asdict(item) for item in self.list_aliases()}
         if alias.name in aliases and not replace:
             raise ConfigError(f"alias already exists: {alias.name}")

@@ -155,3 +155,49 @@ def test_completion_candidates_survives_tailscale_failure(
         "--shell", "bash",
     ]) == 0
     assert "config" in capsys.readouterr().out.splitlines()
+
+
+def test_send_bare_alias_uses_configured_default_path(tmp_path, monkeypatch):
+    config = tmp_path / "config.json"
+    main([
+        "--config", str(config), "config", "add", "linux",
+        "--user", "nbplus", "--host", "linux",
+        "--path", "/home/user/nbplus/Downloads",
+    ])
+    calls = []
+    monkeypatch.setattr("tscp.cli.run_transfer", lambda command: calls.append(command))
+
+    assert main(["--config", str(config), "send", "test.zip", "linux"]) == 0
+    assert calls == [[
+        "scp",
+        "test.zip",
+        "nbplus@linux:/home/user/nbplus/Downloads",
+    ]]
+
+
+def test_send_explicit_path_overrides_default_path(tmp_path, monkeypatch):
+    config = tmp_path / "config.json"
+    main([
+        "--config", str(config), "config", "add", "linux",
+        "--user", "nbplus", "--host", "linux",
+        "--path", "/home/user/nbplus/Downloads",
+    ])
+    calls = []
+    monkeypatch.setattr("tscp.cli.run_transfer", lambda command: calls.append(command))
+
+    assert main([
+        "--config", str(config), "send", "test.zip", "linux:/tmp",
+    ]) == 0
+    assert calls == [["scp", "test.zip", "nbplus@linux:/tmp"]]
+
+
+def test_get_requires_explicit_remote_path(tmp_path, capsys):
+    config = tmp_path / "config.json"
+    main([
+        "--config", str(config), "config", "add", "linux",
+        "--user", "nbplus", "--host", "linux",
+        "--path", "/home/user/nbplus/Downloads",
+    ])
+
+    assert main(["--config", str(config), "get", "linux", "."]) == 2
+    assert "alias:/path" in capsys.readouterr().err
