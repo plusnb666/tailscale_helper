@@ -154,6 +154,35 @@ profile or the Bash command to `~/.bashrc`.
 如需每次启动自动启用，可以将 PowerShell 命令加入 PowerShell profile，
 或将 Bash 命令加入 `~/.bashrc`。
 
+## Default transfer directory / 默认传输目录
+
+Configure a host with its default remote directory / 配置主机及其默认远程目录：
+
+```powershell
+tscp config add linux `
+  --user nbplus `
+  --host linux `
+  --path /home/user/nbplus/Downloads
+```
+
+Send using only the host name / 发送时只写主机名：
+
+```powershell
+tscp send .\test.zip linux
+```
+
+Override the default for one transfer / 单次传输覆盖默认目录：
+
+```powershell
+tscp send .\test.zip linux:/tmp
+```
+
+The bare-host form uses the configured alias default path. Download commands
+still use `host:/path` because the remote source file must be explicit.
+
+仅主机名格式会使用 alias 配置的默认目录。下载命令仍使用 `host:/path`，
+因为远程源文件必须明确指定。
+
 ## Transfer files / 传输文件
 
 ### Send a file / 发送文件
