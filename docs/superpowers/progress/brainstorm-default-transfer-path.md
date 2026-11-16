@@ -6,5 +6,5 @@
 - [x] Present design and get approval — approved.
 - [x] Write design document — `docs/superpowers/specs/2026-11-17-default-transfer-path-design.md`.
 - [x] Self-review design document — checked scope and compatibility.
-- [ ] User reviews written design
-- [ ] Transition to implementation planning
+- [x] User reviews written design — approved.
+- [x] Transition to implementation planning — plan saved to `docs/superpowers/plans/2026-11-17-default-transfer-path.md`.
