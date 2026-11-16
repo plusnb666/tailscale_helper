@@ -7,4 +7,4 @@
 - [x] Write design document — `docs/superpowers/specs/2026-11-16-tailscale-device-discovery-design.md`.
 - [x] Self-review design document — checked scope, consistency, and explicit error behavior.
 - [ ] User reviews written design
-- [ ] Transition to implementation planning
+- [x] Transition to implementation planning — plan saved to `docs/superpowers/plans/2026-11-16-tailscale-device-discovery.md` and checked against the approved Chinese design.
