@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 
-from .errors import ConfigError
+from .errors import ConfigError, UnknownAliasError
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ class ConfigStore:
         for alias in self.list_aliases():
             if alias.name == name:
                 return alias
-        raise ConfigError(f"unknown alias: {name}")
+        raise UnknownAliasError(f"unknown alias: {name}")
 
     def save_alias(self, alias: Alias, replace: bool = False) -> None:
         aliases = {item.name: asdict(item) for item in self.list_aliases()}

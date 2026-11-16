@@ -102,6 +102,30 @@ unless DNS is unavailable.
 `--host` 应填写 Tailscale MagicDNS 主机名。除非 DNS 不可用，否则不需要
 填写 IP 地址。
 
+## Automatic device discovery / 自动发现设备
+
+List Tailscale devices / 查看 Tailscale 设备：
+
+```powershell
+tscp device list
+```
+
+Use a discovered device for transfers / 使用自动发现的设备传输：
+
+```powershell
+tscp send .\report.zip rocky-server:/data/ --user root
+tscp get rocky-server:/data/report.zip .\ --user root
+```
+
+The command reads `tailscale status --json` and uses the device's MagicDNS
+hostname. Discovery-based transfers require `--user` because Tailscale does
+not provide the remote SSH account. Existing configured aliases continue to
+work without `--user`.
+
+命令通过 `tailscale status --json` 读取设备，并使用设备的 MagicDNS 主机名。
+自动发现传输必须提供 `--user`，因为 Tailscale 不提供远程 SSH 用户名。
+已有的配置别名仍然可以不带 `--user` 使用。
+
 ## Transfer files / 传输文件
 
 ### Send a file / 发送文件
