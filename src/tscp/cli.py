@@ -3,8 +3,9 @@ from pathlib import Path
 import sys
 
 from .config import Alias, ConfigStore
-from .errors import TscpError
+from .errors import TscpError, UnknownAliasError
 from .targets import split_remote
+from .tailscale import discover_devices, find_device
 from .transfer import build_scp_command, run_transfer
 
 
@@ -35,14 +36,20 @@ def build_parser() -> argparse.ArgumentParser:
     remove = config_commands.add_parser("remove")
     remove.add_argument("name")
 
+    device = commands.add_parser("device")
+    device_commands = device.add_subparsers(dest="device_command", required=True)
+    device_commands.add_parser("list")
+
     send = commands.add_parser("send")
     send.add_argument("source")
     send.add_argument("destination")
     send.add_argument("-r", "--recursive", action="store_true")
+    send.add_argument("--user")
     get = commands.add_parser("get")
     get.add_argument("source")
     get.add_argument("destination")
     get.add_argument("-r", "--recursive", action="store_true")
+    get.add_argument("--user")
     return parser
 
 
@@ -52,6 +59,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "config":
             return _handle_config(args, store)
+        if args.command == "device":
+            return _handle_device(args)
         return _handle_transfer(args, store)
     except TscpError as exc:
         print(f"tscp: {exc}", file=sys.stderr)
@@ -76,10 +85,34 @@ def _handle_config(args: argparse.Namespace, store: ConfigStore) -> int:
     return 0
 
 
+def _handle_device(args: argparse.Namespace) -> int:
+    if args.device_command == "list":
+        for device in discover_devices():
+            state = "online" if device.online else "offline"
+            print(f"{device.name}\t{device.dns_name}\t{device.operating_system}\t{state}")
+    return 0
+
+
+def _resolve_alias(
+    name: str,
+    store: ConfigStore,
+    user: str | None,
+) -> Alias:
+    try:
+        return store.get_alias(name)
+    except UnknownAliasError:
+        if not user:
+            raise TscpError(
+                f"unknown alias: {name}; discovery transfers require --user"
+            )
+        device = find_device(discover_devices(), name)
+        return Alias(name=name, user=user, host=device.dns_name, default_path="/")
+
+
 def _handle_transfer(args: argparse.Namespace, store: ConfigStore) -> int:
     remote_value = args.destination if args.command == "send" else args.source
     alias_name, remote_path = split_remote(remote_value)
-    alias = store.get_alias(alias_name)
+    alias = _resolve_alias(alias_name, store, args.user)
     transfer_source = args.source if args.command == "send" else remote_path
     transfer_destination = remote_path if args.command == "send" else args.destination
     command = build_scp_command(
