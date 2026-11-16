@@ -1,4 +1,5 @@
 from tscp.cli import main
+from tscp.errors import TscpError
 from tscp.tailscale import TailscaleDevice
 
 
@@ -102,3 +103,55 @@ def test_discovery_transfer_requires_user(tmp_path, monkeypatch, capsys):
         "--config", str(config), "send", "report.zip", "rocky-server:/data/"
     ]) == 2
     assert "--user" in capsys.readouterr().err
+
+
+def test_completion_powershell_prints_script(capsys):
+    assert main(["completion", "powershell"]) == 0
+    assert "Register-ArgumentCompleter" in capsys.readouterr().out
+
+
+def test_completion_bash_prints_script(capsys):
+    assert main(["completion", "bash"]) == 0
+    assert "complete -F" in capsys.readouterr().out
+
+
+def test_completion_candidates_prints_aliases_and_devices(
+    tmp_path, monkeypatch, capsys
+):
+    config = tmp_path / "config.json"
+    main([
+        "--config", str(config), "config", "add", "rocky",
+        "--user", "root", "--host", "rocky-server", "--path", "/data",
+    ])
+    monkeypatch.setattr(
+        "tscp.cli.discover_devices",
+        lambda: [
+            TailscaleDevice(
+                "rocky-server", "rocky-server.tail123.ts.net", True, "linux"
+            )
+        ],
+    )
+
+    assert main([
+        "--config", str(config), "completion", "candidates",
+        "--shell", "powershell",
+    ]) == 0
+    output = capsys.readouterr().out.splitlines()
+    assert "rocky" in output
+    assert "rocky-server" in output
+    assert "rocky-server.tail123.ts.net" in output
+
+
+def test_completion_candidates_survives_tailscale_failure(
+    tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        "tscp.cli.discover_devices",
+        lambda: (_ for _ in ()).throw(TscpError("tailscale unavailable")),
+    )
+
+    assert main([
+        "--config", str(tmp_path / "config.json"), "completion", "candidates",
+        "--shell", "bash",
+    ]) == 0
+    assert "config" in capsys.readouterr().out.splitlines()
